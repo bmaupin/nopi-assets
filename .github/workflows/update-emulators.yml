@@ -1,0 +1,49 @@
+name: Update emulators
+
+on:
+  # TODO: enable schedule
+  # schedule:
+  #   # Run the first day of the month at a (more or less) random time
+  #   - cron: '31 6 1 * *'
+
+  # Allows running this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  update-emulators:
+    runs-on: ubuntu-latest
+
+    steps:
+      # TODO: store the latest version somewhere and determine whether a build is even necessary
+      - name: Fetch libretro-super
+        run: git clone --depth 1 https://github.com/libretro/libretro-super.git
+
+      # TODO: later, fetch more cores; maybe from a list stored in a .txt file?
+      - name: Fetch core
+        run: |
+          cd libretro-super
+          ./libretro-fetch.sh --shallow fceumm
+
+      # TODO: manually fetch retroarch so we can get the latest stable tag
+      - name: Fetch retroarch
+        run: |
+          cd libretro-super
+          ./libretro-fetch.sh --shallow retroarch
+
+      # TODO: later, build multiple cores; see https://docs.libretro.com/development/retroarch/compilation/3ds/#building-retroarch-in-bulk
+      - name: Build core library
+        run: |
+          cd libretro-super
+          docker run --rm -v "$PWD:/build" devkitpro/devkitarm sh -c "cd /build; ./libretro-build-ctr.sh fceumm
+
+      - name: Build salamander
+        run: |
+          cd libretro-super/retroarch
+          docker run --rm -v "$PWD:/build" --network=host devkitpro/devkitarm sh -c "cd /build; make -f Makefile.ctr.salamander USE_CTRULIB_2=1"
+
+      # TODO: build multiple cores
+      - name: Build standalone core
+        run: |
+          cd libretro-super/retroarch
+          cp ../dist/ctr/fceumm_libretro_ctr.a libretro_ctr.a
+          docker run --rm -v "$PWD:/build" --network=host devkitpro/devkitarm sh -c "cd /build; make -f Makefile.ctr USE_CTRULIB_2=1"
