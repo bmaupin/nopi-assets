@@ -15,6 +15,9 @@ jobs:
 
     steps:
       # TODO: store the latest version somewhere and determine whether a build is even necessary
+      - name: Get latest version of RetroArch
+        run: echo "RETROARCH_LATEST_VERSION=$(git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' https://github.com/libretro/RetroArch.git | tail -n 1 | cut -d / -f 3)" >> $GITHUB_ENV
+
       - name: Fetch libretro-super
         run: git clone --depth 1 https://github.com/libretro/libretro-super.git
 
@@ -24,17 +27,22 @@ jobs:
           cd libretro-super
           ./libretro-fetch.sh --shallow fceumm
 
-      # TODO: manually fetch retroarch so we can get the latest stable tag
-      - name: Fetch retroarch
+      # Fetch RetroArch manually instead of using libretro-fetch.sh so that we can fetch the latest stable tag
+      - name: Fetch RetroArch and dependencies
         run: |
           cd libretro-super
-          ./libretro-fetch.sh --shallow retroarch
+          git clone --depth=1 -b "$RETROARCH_LATEST_VERSION" https://github.com/libretro/RetroArch.git retroarch
+          cd retroarch
+          # From libretro-super/rules.d/player-rules.sh
+          ./fetch-submodules.sh
 
       # TODO: later, build multiple cores; see https://docs.libretro.com/development/retroarch/compilation/3ds/#building-retroarch-in-bulk
       - name: Build core library
         run: |
           cd libretro-super
-          docker run --rm -v "$PWD:/build" devkitpro/devkitarm sh -c "cd /build; ./libretro-build-ctr.sh fceumm
+          docker run --rm -v "$PWD:/build" devkitpro/devkitarm sh -c "cd /build; ./libretro-build-ctr.sh fceumm"
+
+      # TODO: Patch RetroArch
 
       - name: Build salamander
         run: |
