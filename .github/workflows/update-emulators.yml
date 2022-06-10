@@ -13,7 +13,10 @@ jobs:
   update-emulators:
     runs-on: ubuntu-latest
 
-    env: ROMFS_DIR=pkg/ctr/build/romfsdir
+    env:
+      # TODO: iterate over list of cores
+      CORE_NAME=fceumm
+      ROMFS_DIR=pkg/ctr/build/romfs
 
     steps:
       # TODO: store the latest version somewhere and determine whether a build is even necessary
@@ -27,7 +30,7 @@ jobs:
       - name: Fetch core
         run: |
           cd libretro-super
-          ./libretro-fetch.sh --shallow fceumm
+          ./libretro-fetch.sh --shallow "$CORE_NAME"
 
       # Fetch RetroArch manually instead of using libretro-fetch.sh so that we can fetch the latest stable tag
       - name: Fetch RetroArch and dependencies
@@ -42,7 +45,7 @@ jobs:
       - name: Build core library
         run: |
           cd libretro-super
-          docker run --rm -v "$PWD:/build" devkitpro/devkitarm sh -c "cd /build; ./libretro-build-ctr.sh fceumm"
+          docker run --rm -v "$PWD:/build" devkitpro/devkitarm sh -c "cd /build; ./libretro-build-ctr.sh $CORE_NAME"
 
       - name: Create and include RomFS in the core CIA
         run: |
@@ -71,5 +74,5 @@ jobs:
       - name: Build standalone core
         run: |
           cd libretro-super/retroarch
-          cp ../dist/ctr/fceumm_libretro_ctr.a libretro_ctr.a
+          cp "../dist/ctr/${CORE_NAME}_libretro_ctr.a" libretro_ctr.a
           docker run --rm -v "$PWD:/build" --network=host devkitpro/devkitarm sh -c "cd /build; make -f Makefile.ctr USE_CTRULIB_2=1"
