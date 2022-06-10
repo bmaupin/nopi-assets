@@ -44,14 +44,22 @@ jobs:
           cd libretro-super
           docker run --rm -v "$PWD:/build" devkitpro/devkitarm sh -c "cd /build; ./libretro-build-ctr.sh fceumm"
 
-      # TODO: Patch RetroArch
-
       - name: Create and include RomFS in the core CIA
         run: |
           cd libretro-super/retroarch
           mkdir -p "$ROMFS_DIR"
           sed -i "s@TitleInfo:@RomFs:\n  RootPath                : $ROMFS_DIR\n\nTitleInfo2:@"  pkg/ctr/tools/template.rsf
-        env: ROMFS_DIR=pkg/ctr/build/romfsdir
+
+      - name: Patch RetroArch to load ROM from RomFS
+        run: |
+          cd libretro-super/retroarch
+          # Mount the RomFS at romfs:/
+          sed -i 's/FILE_PATH_MAIN_CONFIG\(.*\)/FILE_PATH_MAIN_CONFIG\1\n\n   romfsInit();/' frontend/drivers/platform_ctr.c
+          # Load the ROM at romfs:/rom.bin by default
+          sed -i '0,/wrap_args->content_path\s.*=\s.*NULL/{s//wrap_args->content_path   = strdup("romfs:\/rom\.bin")/}' tasks/task_content.c
+          sed -i 's/wrap_args->touched\s.*=\s.*false/wrap_args->touched        = true/' tasks/task_content.c
+          # Create a dummy rom.bin file
+          echo -n "nopi" > "$ROMFS_DIR"/rom.bin
 
       # TODO: is this needed?
       - name: Build salamander
