@@ -13,6 +13,8 @@ jobs:
   update-emulators:
     runs-on: ubuntu-latest
 
+    env: ROMFS_DIR=pkg/ctr/build/romfsdir
+
     steps:
       # TODO: store the latest version somewhere and determine whether a build is even necessary
       - name: Get latest version of RetroArch
@@ -44,6 +46,14 @@ jobs:
 
       # TODO: Patch RetroArch
 
+      - name: Create and include RomFS in the core CIA
+        run: |
+          cd libretro-super/retroarch
+          mkdir -p "$ROMFS_DIR"
+          sed -i "s@TitleInfo:@RomFs:\n  RootPath                : $ROMFS_DIR\n\nTitleInfo2:@"  pkg/ctr/tools/template.rsf
+        env: ROMFS_DIR=pkg/ctr/build/romfsdir
+
+      # TODO: is this needed?
       - name: Build salamander
         run: |
           cd libretro-super/retroarch
