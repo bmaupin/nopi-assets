@@ -64,6 +64,24 @@ jobs:
           # Create a dummy rom.bin file
           echo -n "nopi" > "$ROMFS_DIR"/rom.bin
 
+      - name: Add workarounds to fix save state functionality
+        run: |
+          cp -r emulators/romfs/. "$ROMFS_DIR"/
+          # This allows RetroArch run from a standalone CIA core to have a core path; the
+          # path here will be overridden by config_file_salamander_get_path() if I'm
+          # remembering correctly :P
+          echo "libretro_path = \"sdmc:/retroarch/cores/${CORE_NAME}_libretro.cia\"" > "$ROMFS_DIR"/retroarch-salamander.cfg
+          # The core path is looked up as part of the logic for matching it with the core
+          # info, so we bundle a dummy core to work around it
+          mkdir -p "$ROMFS_DIR/cores"
+          touch "$ROMFS_DIR/cores/${CORE_NAME}_libretro.cia"
+          # RetroArch since 1.9.3 (commit 50d27fad) won't allow loading games without the
+          # info file, and even if that's hacked around, save states won't work without
+          # the info file since 1.10.1 (commit 42e03cae), so we need to bundle the info
+          # file as well
+          mkdir -p "$ROMFS_DIR/info"
+          touch "$ROMFS_DIR/info/${CORE_NAME}_libretro.info"
+
       # TODO: is this needed?
       - name: Build salamander
         run: |
