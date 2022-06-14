@@ -66,7 +66,8 @@ jobs:
 
       - name: Add workarounds to fix save state functionality
         run: |
-          cp -r emulators/romfs/. "$ROMFS_DIR"/
+          cd libretro-super/retroarch
+          cp -r ../../emulators/romfs/. "$ROMFS_DIR"/
           # This allows RetroArch run from a standalone CIA core to have a core path; the
           # path here will be overridden by config_file_salamander_get_path() if I'm
           # remembering correctly :P
@@ -81,6 +82,12 @@ jobs:
           # file as well
           mkdir -p "$ROMFS_DIR/info"
           touch "$ROMFS_DIR/info/${CORE_NAME}_libretro.info"
+
+      - name: Copy assets
+        run: |
+          cd libretro-super/retroarch
+          mkdir -p "$ROMFS_DIR/assets/ctr"
+          cp media/assets/ctr/bottom_menu.png "$ROMFS_DIR/assets/ctr"
 
       # TODO: is this needed?
       - name: Build salamander
