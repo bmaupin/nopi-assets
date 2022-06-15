@@ -90,6 +90,11 @@ jobs:
           cp media/assets/ctr/bottom_menu.png "$ROMFS_DIR/assets/ctr"
 
       # TODO: build multiple cores
+      - name: Build core library
+        run: |
+          cd libretro-super
+          docker run --rm -v "$PWD:/build" devkitpro/devkitarm sh -c "cd /build; ./libretro-build-ctr.sh $CORE_NAME"
+
       - name: Build standalone core
         run: |
           cd libretro-super/retroarch
