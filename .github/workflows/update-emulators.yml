@@ -89,12 +89,6 @@ jobs:
           mkdir -p "$ROMFS_DIR/assets/ctr"
           cp media/assets/ctr/bottom_menu.png "$ROMFS_DIR/assets/ctr"
 
-      # TODO: is this needed?
-      - name: Build salamander
-        run: |
-          cd libretro-super/retroarch
-          docker run --rm -v "$PWD:/build" --network=host devkitpro/devkitarm sh -c "cd /build; make -f Makefile.ctr.salamander USE_CTRULIB_2=1"
-
       # TODO: build multiple cores
       - name: Build standalone core
         run: |
