@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # TODO: iterate over list of cores
+      # TODO: build multiple cores; see https://docs.libretro.com/development/retroarch/compilation/3ds/#building-retroarch-in-bulk
       CORE_NAME=fceumm
       ROMFS_DIR=pkg/ctr/build/romfs
 
@@ -26,7 +26,6 @@ jobs:
       - name: Fetch libretro-super
         run: git clone --depth 1 https://github.com/libretro/libretro-super.git
 
-      # TODO: later, fetch more cores; maybe from a list stored in a .txt file?
       - name: Fetch core
         run: |
           cd libretro-super
@@ -41,37 +40,33 @@ jobs:
           # From libretro-super/rules.d/player-rules.sh
           ./fetch-submodules.sh
 
-      # TODO: later, build multiple cores; see https://docs.libretro.com/development/retroarch/compilation/3ds/#building-retroarch-in-bulk
       - name: Build core library
         run: |
           cd libretro-super
           docker run --rm -v "$PWD:/build" devkitpro/devkitarm sh -c "cd /build; ./libretro-build-ctr.sh $CORE_NAME"
 
-      - name: Create and include RomFS in the core CIA
+      - name: Patch RetroArch
         run: |
           cd libretro-super/retroarch
-          mkdir -p "$ROMFS_DIR"
-          sed -i "s@TitleInfo:@RomFs:\n  RootPath                : $ROMFS_DIR\n\nTitleInfo2:@"  pkg/ctr/tools/template.rsf
-
-      - name: Patch RetroArch to load ROM from RomFS
-        run: |
-          cd libretro-super/retroarch
-          # Mount the RomFS at romfs:/
-          sed -i 's/FILE_PATH_MAIN_CONFIG\(.*\)/FILE_PATH_MAIN_CONFIG\1\n\n   romfsInit();/' frontend/drivers/platform_ctr.c
+          # Mount the RomFS at romfs:/ and override the default location of retroarch.cfg
+          sed -i 's/FILE_PATH_MAIN_CONFIG\(.*\)/FILE_PATH_MAIN_CONFIG\1\n\n   romfsInit();\n   strncpy(g_defaults.path_config, "romfs:\/retroarch.cfg", sizeof(g_defaults.path_config));/' frontend/drivers/platform_ctr.c
+          # Make sure RomFS gets included in the core CIA
+          sed -i "s@TitleInfo:@RomFs:\n  RootPath                : $ROMFS_DIR\n\nTitleInfo:@"  pkg/ctr/tools/template.rsf
           # Load the ROM at romfs:/rom.bin by default
           sed -i '0,/wrap_args->content_path\s.*=\s.*NULL/{s//wrap_args->content_path   = strdup("romfs:\/rom\.bin")/}' tasks/task_content.c
           sed -i 's/wrap_args->touched\s.*=\s.*false/wrap_args->touched        = true/' tasks/task_content.c
-          # Create a dummy rom.bin file
-          echo -n "nopi" > "$ROMFS_DIR"/rom.bin
 
-      - name: Add workarounds to fix save state functionality
+      - name: Set up RomFS
         run: |
           cd libretro-super/retroarch
+          mkdir -p "$ROMFS_DIR"
           cp -r ../../emulators/romfs/. "$ROMFS_DIR"/
           # This allows RetroArch run from a standalone CIA core to have a core path; the
           # path here will be overridden by config_file_salamander_get_path() if I'm
           # remembering correctly :P
           echo "libretro_path = \"sdmc:/retroarch/cores/${CORE_NAME}_libretro.cia\"" > "$ROMFS_DIR"/retroarch-salamander.cfg
+          # Create a dummy rom.bin file
+          echo -n "nopi" > "$ROMFS_DIR"/rom.bin
           # The core path is looked up as part of the logic for matching it with the core
           # info, so we bundle a dummy core to work around it
           mkdir -p "$ROMFS_DIR/cores"
@@ -89,7 +84,6 @@ jobs:
           mkdir -p "$ROMFS_DIR/assets/ctr"
           cp media/assets/ctr/bottom_menu.png "$ROMFS_DIR/assets/ctr"
 
-      # TODO: build multiple cores
       - name: Build core library
         run: |
           cd libretro-super
