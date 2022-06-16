@@ -98,7 +98,8 @@ jobs:
           cp "../dist/ctr/${CORE_NAME}_libretro_ctr.a" libretro_ctr.a
           docker run --rm -v "$PWD:/build" --network=host devkitpro/devkitarm sh -c "cd /build; make -f Makefile.ctr USE_CTRULIB_2=1"
           mv retroarch_3ds.cia "../../emulators/${CORE_NAME}_libretro.cia"
-          git add "../../emulators/${CORE_NAME}_libretro.cia"
+          cd ../..
+          git add "emulators/${CORE_NAME}_libretro.cia"
 
       - name: Push updated cores to Git
         run: |
