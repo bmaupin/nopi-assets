@@ -19,6 +19,9 @@ jobs:
       ROMFS_DIR: pkg/ctr/build/romfs
 
     steps:
+      - name: Check out this Git repository into the current directory
+        uses: actions/checkout@v3
+
       # TODO: store the latest version somewhere and determine whether a build is even necessary
       - name: Get latest version of RetroArch
         run: echo "RETROARCH_LATEST_VERSION=$(git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' https://github.com/libretro/RetroArch.git | tail -n 1 | cut -d / -f 3)" >> $GITHUB_ENV
