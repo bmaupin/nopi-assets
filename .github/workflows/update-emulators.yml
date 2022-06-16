@@ -15,8 +15,8 @@ jobs:
 
     env:
       # TODO: build multiple cores; see https://docs.libretro.com/development/retroarch/compilation/3ds/#building-retroarch-in-bulk
-      CORE_NAME=fceumm
-      ROMFS_DIR=pkg/ctr/build/romfs
+      CORE_NAME: fceumm
+      ROMFS_DIR: pkg/ctr/build/romfs
 
     steps:
       # TODO: store the latest version somewhere and determine whether a build is even necessary
