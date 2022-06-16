@@ -94,3 +94,16 @@ jobs:
           cd libretro-super/retroarch
           cp "../dist/ctr/${CORE_NAME}_libretro_ctr.a" libretro_ctr.a
           docker run --rm -v "$PWD:/build" --network=host devkitpro/devkitarm sh -c "cd /build; make -f Makefile.ctr USE_CTRULIB_2=1"
+          mv retroarch_3ds.cia "../../emulators/${CORE_NAME}_libretro.cia"
+          git add "../../emulators/${CORE_NAME}_libretro.cia"
+
+      - name: Push updated cores to Git
+        run: |
+          # https://github.community/t/github-actions-bot-email-address/17204/5
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git commit -m "Update cores" || exit 0
+          git push
+
+# TODO
+# - use core-specific banner
